@@ -1,54 +1,48 @@
-# 📐 directory-layout
+# directory-layout
 
-> Skill para [OpenCode](https://opencode.ai) que genera estructuras de directorio óptimas para cualquier proyecto. Toma una idea, un archivo individual o una carpeta existente y produce layouts cohesivos basados en principios formales de organización de paquetes.
+Herramienta que genera estructuras de directorio óptimas para cualquier proyecto. Toma una idea, un archivo individual o una carpeta existente y produce layouts cohesivos basados en principios formales de organización de paquetes. Solo crea carpetas, mueve archivos y escribe logs — nunca genera archivos nuevos.
 
-[![OpenCode](https://img.shields.io/badge/OpenCode-skill-6C47FF?style=flat-square)](https://opencode.ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
 ---
 
-## ✨ ¿Qué hace?
+## ¿Qué hace?
 
 Dale una idea, un archivo, o una carpeta llena de archivos desordenados, y **directory-layout** te devuelve:
 
-- Un árbol de directorio bien pensado con **READMEs** en cada nodo
+- Un árbol de directorio bien pensado, sin generar archivos nuevos
 - El **patrón óptimo** justificado con principios formales (CCP, CRP, REP, Screaming Architecture)
 - Un **plan de migración** si estás refactorizando
-- Con `--force`, ejecuta la migración real: mueve archivos, actualiza imports, genera READMEs
+- Con `--force`, ejecuta la migración real: crea carpetas, mueve archivos, actualiza imports
 
 ---
 
-## 📦 Instalación
+## Instalación
 
 ```bash
-# 1. Clona este repo en la carpeta de skills de OpenCode
-git clone https://github.com/jairferrara/directory-layout-skill.git \
-  ~/.config/opencode/skills/directory-layout
-
-# 2. (Opcional) Habilita la skill en tu opencode.json
-#    Ya debería detectarse automáticamente al estar en la carpeta skills/
-```
-
-> **Requisito:** OpenCode v0.24+ con soporte para skills.
-
----
-
-## 🚀 Uso rápido
-
-```bash
-/layout "un microservicio de pagos con FastAPI"
-/layout src/main.py                       # generar layout a partir de un archivo
-/layout ~/proyectos/caotico/              # analizar carpeta y proponer estructura
-/layout . --dry-run                       # preview sin crear nada
-/layout . --force                         # ejecutar la migración
-/layout . --pattern hexagonal             # forzar un patrón específico
-/layout . --explain                       # explicación detallada de cada decisión
-/layout . --flat                          # estructura plana mínima
+git clone https://github.com/jairferrara/directory-layout-skill.git
+cd directory-layout-skill
+pip install -e .
 ```
 
 ---
 
-## 🧠 Patrones disponibles
+## Uso rápido
+
+```bash
+directory-layout "un microservicio de pagos con FastAPI"
+directory-layout src/main.py                       # generar layout a partir de un archivo
+directory-layout ~/proyectos/caotico/              # analizar carpeta y proponer estructura
+directory-layout . --dry-run                       # preview sin crear nada
+directory-layout . --force                         # ejecutar la migración
+directory-layout . --pattern hexagonal             # forzar un patrón específico
+directory-layout . --explain                       # explicación detallada de cada decisión
+directory-layout . --flat                          # estructura plana mínima
+```
+
+---
+
+## Patrones disponibles
 
 | Patrón | Flag | Ideal para |
 |--------|------|------------|
@@ -58,10 +52,11 @@ git clone https://github.com/jairferrara/directory-layout-skill.git \
 | **Hexagonal** | `--pattern hexagonal` | Microservicios, arquitectura limpia, Ports & Adapters |
 | **Monorepo** | `--pattern monorepo` | Proyectos multi-paquete, workspaces |
 | **Flat-by-type** | `--pattern flat` | Librerías, CLIs, herramientas simples |
+| **Skill** | `--pattern skill` | Skills LLM, plugins, agentes |
 
 ### Selección automática
 
-Si no especificas `--pattern`, la skill detecta el patrón ideal según el contenido:
+Si no especificas `--pattern`, la herramienta detecta el patrón ideal según el contenido:
 
 | Si detecta... | Usa... |
 |---------------|--------|
@@ -72,31 +67,29 @@ Si no especificas `--pattern`, la skill detecta el patrón ideal según el conte
 | Directorios `api/`, `domain/`, `infrastructure/` | `hexagonal` |
 | Directorios por tema (física/, mates/) | `domain` |
 | Directorios por feature (auth/, dashboard/) | `feature` |
+| Archivo `SKILL.md` en la raíz | `skill` |
 | Archivos sueltos en la raíz | `flat-by-type` |
 
 ---
 
-## 📋 Ejemplos
+## Ejemplos
 
 ### Desde una idea
 
 ```
-/layout "un CLI tool para convertir Markdown a LaTeX"
+directory-layout "un CLI tool para convertir Markdown a LaTeX"
 ```
 
 ```
 markdown-to-latex/
 ├── src/
-│   ├── main.py           # entry point
 │   ├── converters/       # md→tex conversion logic
 │   ├── parsers/          # markdown AST parser
 │   └── utils/
 ├── tests/
 ├── docs/
 ├── examples/
-├── README.md
-├── pyproject.toml
-└── Makefile
+└── scripts/
 ```
 
 Patrón: **flat-by-type** — los CLI tools no necesitan anidamiento profundo.
@@ -106,38 +99,30 @@ Patrón: **flat-by-type** — los CLI tools no necesitan anidamiento profundo.
 Dado `app.py` con `from flask import Flask`:
 
 ```
-/layout app.py
+directory-layout app.py
 ```
 
 ```
 app/
 ├── api/
-│   ├── routes.py
-│   └── middleware.py
+│   └── routes.py          ← app.py moved here
 ├── domain/
-│   ├── models.py
-│   └── services.py
 ├── infrastructure/
-│   ├── database.py
-│   └── redis.py
 ├── config/
-│   └── settings.py
-├── tests/
-├── requirements.txt
-└── README.md
+└── tests/
 ```
 
 ### Refactorizando una carpeta existente
 
 ```
-/layout ~/messy-project/ --explain
+directory-layout ~/messy-project/ --explain
 ```
 
 Analiza la estructura actual, computa el **cohesion score**, detecta el mejor patrón, y explica cada decisión sin modificar nada.
 
 ---
 
-## ⚙️ Flags
+## Flags
 
 | Flag | Descripción |
 |------|-------------|
@@ -149,7 +134,7 @@ Analiza la estructura actual, computa el **cohesion score**, detecta el mejor pa
 
 ---
 
-## ⚖️ Principios aplicados
+## Principios aplicados
 
 | Principio | Nombre | Regla |
 |-----------|--------|-------|
@@ -163,12 +148,12 @@ Analiza la estructura actual, computa el **cohesion score**, detecta el mejor pa
 
 ---
 
-## 📁 Estructura del repo
+## Estructura del repo
 
 ```
 directory-layout-skill/
 ├── README.md              ← esto
-├── SKILL.md               ← skill principal
+├── SKILL.md               ← archivo principal
 └── references/            ← plantillas de cada patrón
     ├── domain-driven.md
     ├── feature-based.md
@@ -180,10 +165,10 @@ directory-layout-skill/
 
 ---
 
-## 🤝 Contribuir
+## Contribuir
 
 ¿Te falta un patrón? ¿Mejoras para un template existente? Abre un issue o PR en [github.com/jairferrara/directory-layout-skill](https://github.com/jairferrara/directory-layout-skill).
 
 ---
 
-Hecho con ❤️ por [@jairferrara](https://github.com/jairferrara)
+Hecho por [@jairferrara](https://github.com/jairferrara)

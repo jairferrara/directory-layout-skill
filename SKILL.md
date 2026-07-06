@@ -1,6 +1,6 @@
 ---
 name: directory-layout
-description: "Generates optimal directory layout patterns for any project. Takes an idea description, a single file, or an existing folder of files and produces a cohesive, principled directory structure with README stubs for every node. Applies formal package-organization principles (CCP, CRP, REP, Screaming Architecture) to produce structures that are predictable, cohesive, and future-proof."
+description: "Generates optimal directory layout patterns for any project. Takes an idea description, a single file, or an existing folder of files and produces a cohesive, principled directory structure. Applies formal package-organization principles (CCP, CRP, REP, Screaming Architecture) to produce structures that are predictable, cohesive, and future-proof."
 ---
 
 # /layout
@@ -20,6 +20,7 @@ Generate a principled directory structure for any project — from scratch (give
 /layout path/to/folder/ --pattern feature    # feature-based (default for web apps)
 /layout path/to/folder/ --pattern hexagonal  # ports & adapters (default for services)
 /layout path/to/folder/ --pattern monorepo   # multi-package monorepo
+/layout path/to/folder/ --pattern skill      # LLM skill / plugin / agent
 /layout path/to/folder/ --flat               # minimal flat structure
 /layout path/to/folder/ --explain            # explain why this pattern was chosen
 ```
@@ -90,6 +91,7 @@ If `--flat` is present: output the minimal flat structure for that project type.
 | monorepo, multi-package, workspaces | Monorepo | monorepo |
 | service, microservice, event-driven | Service | hexagonal |
 | learning, course, tutorial, study | Learning | domain |
+| skill, SKILL.md, plugin, command, agent | LLM Skill | skill |
 | *default / unknown* | General | layered |
 
 2. Generate the base structure using the detected pattern.
@@ -105,8 +107,6 @@ If `--flat` is present: output the minimal flat structure for that project type.
 2. Generate a structure that contextualizes this file properly:
    - Place the file in its appropriate subdirectory (e.g. `src/`, `lib/`, etc.)
    - Add sibling directories for other concerns the file implies
-   - Generate README stubs for each directory
-
 3. If the file imports other local modules that don't exist, note them as
    "implied dependencies" in a `### Implied modules` section of the output.
 
@@ -137,7 +137,6 @@ If `--flat` is present: output the minimal flat structure for that project type.
    - Create the new directory structure
    - Move files to their new locations
    - Update internal imports (relative paths, require/import statements)
-   - Generate README files in each directory
    - Leave a `STRUCTURE_CHANGELOG.md` documenting every move
 
 7. If `--force` was NOT given (default), output the proposed structure as a tree
@@ -238,32 +237,33 @@ project/
 └── scripts/
 ```
 
+**G. Skill** — for LLM skills, plugins, agents
+
+```
+project/
+├── SKILL.md            # Main entrypoint (required)
+├── references/         # Documentation loaded on demand
+├── scripts/            # Executable code (Python, Bash, JS)
+├── examples/           # Usage examples
+└── README.md           # Project documentation
+```
+
 **Selection rules** (apply in order):
 1. If any file has `import flask` / `from fastapi` / `express` → **layered**
-2. If any file has `import React` / `from "react"` / `@Component` → **feature**
-3. If any file has `import torch` / `import tensorflow` / `import numpy` → **domain**
-4. If `package.json` has `"workspaces"` or root `Cargo.toml` has `[workspace]` → **monorepo**
-5. If the folder has dirs like `api/`, `domain/`, `infrastructure/` already → **hexagonal**
-6. If the folder has dirs named by subject (physics/, math/, biology/) → **domain**
-7. If the folder has dirs named by feature (auth/, dashboard/, checkout/) → **feature**
-8. If files are all in root with no structure → **flat-by-type** (most conservative)
-9. If the cohesion score is <0.3 (highly scattered) → propose refactor with justification
-10. If none match → **layered** (most universal)
+2. If the root directory contains a `SKILL.md` file → **skill**
+3. If any file has `import React` / `from "react"` / `@Component` → **feature**
+4. If any file has `import torch` / `import tensorflow` / `import numpy` → **domain**
+5. If `package.json` has `"workspaces"` or root `Cargo.toml` has `[workspace]` → **monorepo**
+6. If the folder has dirs like `api/`, `domain/`, `infrastructure/` already → **hexagonal**
+7. If the folder has dirs named by subject (physics/, math/, biology/) → **domain**
+8. If the folder has dirs named by feature (auth/, dashboard/, checkout/) → **feature**
+9. If files are all in root with no structure → **flat-by-type** (most conservative)
+10. If the cohesion score is <0.3 (highly scattered) → propose refactor with justification
+11. If none match → **layered** (most universal)
 
 ### Phase 3 — Generate the structure
 
-Build the directory tree using the selected pattern. For every directory, generate
-a `README.md` stub:
-
-```markdown
-# <dirname>
-
-_<purpose>_
-
-## Convention
-
-[What goes here, what doesn't, naming rules]
-```
+Build the directory tree using the selected pattern.
 
 ### Phase 3b — Migration plan (only for existing folders)
 
@@ -291,23 +291,21 @@ For each move, determine whether imports need updating:
 project/
 ├── features/
 │   ├── auth/
-│   │   ├── README.md
 │   │   ├── routes.py
 │   │   ├── domain.py
 │   │   └── tests/
+│   │       └── test_auth.py
 │   └── dashboard/
-│       ├── README.md
 │       ├── routes.py
 │       ├── domain.py
 │       └── tests/
+│           └── test_dashboard.py
 ├── shared/
-│   ├── README.md
 │   └── utils.py
 ├── config/
-│   └── README.md
-├── tests/
-│   └── README.md
-└── README.md            # project overview
+│   └── settings.py
+└── tests/
+    └── test_integration.py
 ```
 
 Then append:
@@ -326,14 +324,12 @@ If `--force` was given and files were actually moved, also output:
 ✓ Created 12 directories
 ✓ Moved 34 files
 ✓ Updated 28 import paths
-✓ Generated 12 READMEs
 → See STRUCTURE_CHANGELOG.md for full migration log
 ```
 
-### Phase 5 — Post-generation (only when files were created)
+### Phase 5 — Logging (only when files were moved)
 
-If `--force` was used or the skill created directories/files, write a
-`.layout-meta.json` in the root:
+If `--force` was used, write a `.layout-meta.json` in the root as a log of what was done:
 
 ```json
 {
@@ -344,6 +340,8 @@ If `--force` was used or the skill created directories/files, write a
   "migration_log": "STRUCTURE_CHANGELOG.md"
 }
 ```
+
+This is the only file created beyond directories and moved files.
 
 ## Design principles reference
 
@@ -388,10 +386,10 @@ load the template and specialize it for the project:
 - `references/hexagonal.md`
 - `references/monorepo.md`
 - `references/flat-by-type.md`
+- `references/skill.md`
 
 Create these on first use if they don't exist. Each reference contains:
 - Full directory tree for the pattern
-- README templates for every directory
 - Rules for what goes where
 - Common anti-patterns (what *not* to put in each directory)
 
@@ -424,16 +422,13 @@ Output:
 ```
 markdown-to-latex/
 ├── src/
-│   ├── main.py           # entry point
 │   ├── converters/       # md→tex conversion logic
 │   ├── parsers/          # markdown AST parser
 │   └── utils/
 ├── tests/
 ├── docs/
 ├── examples/
-├── README.md
-├── pyproject.toml
-└── Makefile
+└── scripts/
 ```
 
 Pattern: **flat-by-type** — CLI tools don't need deep nesting.
@@ -448,24 +443,16 @@ Given `app.py` containing `from flask import Flask`:
 /layout app.py
 ```
 
-Detects: Flask web app. Generates:
+Detects: Flask web app. Places the file and creates the directory scaffold:
 
 ```
 app/
 ├── api/
-│   ├── routes.py
-│   └── middleware.py
+│   └── routes.py          ← app.py moved here
 ├── domain/
-│   ├── models.py
-│   └── services.py
 ├── infrastructure/
-│   ├── database.py
-│   └── redis.py
 ├── config/
-│   └── settings.py
-├── tests/
-├── requirements.txt
-└── README.md
+└── tests/
 ```
 
 File placement: `app.py` → `api/routes.py` (it's a Flask app with routes).
@@ -486,7 +473,8 @@ Without `--force`, does nothing — just shows the plan.
 
 - Never propose a structure deeper than 4 levels without justification
 - Never delete files or directories without `--force`
-- Never modify file contents without `--force` (except READMEs, which are new files)
+- Never create new files (only directories, moved files, and log files are created)
+- Never modify file contents without `--force`
 - If `--dry-run`, output the plan and absolutely nothing else
 - Always mention what pattern was chosen and why
 - If cohesion is already >0.7, say so and ask if the user still wants restructuring
